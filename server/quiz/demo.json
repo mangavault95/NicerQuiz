@@ -1,0 +1,426 @@
+{
+  "titolo": "Serata di prova",
+  "impostazioni": {
+    "puntiErrore": 3
+  },
+  "round": [
+    {
+      "nome": "Riscaldamento",
+      "tipo": "secca",
+      "descrizione": "Domande secche. Chi prenota per primo risponde, chi sbaglia esce dalla domanda.",
+      "punti": 10,
+      "puntiErrore": 5,
+      "secondi": 30,
+      "domande": [
+        {
+          "testo": "Qual e' il fiume piu' lungo d'Italia?",
+          "risposta": "Il Po",
+          "accettate": [
+            "Po"
+          ],
+          "note": "652 km. Se dicono 'Tevere' e' il secondo piu' famoso, non il piu' lungo."
+        },
+        {
+          "testo": "In che anno e' caduto il muro di Berlino?",
+          "risposta": "1989",
+          "accettate": [
+            "89",
+            "novembre 1989"
+          ],
+          "note": "9 novembre 1989."
+        },
+        {
+          "testo": "Quante corde ha un violino?",
+          "risposta": "Quattro",
+          "accettate": [
+            "4"
+          ],
+          "note": "Sol, Re, La, Mi."
+        }
+      ]
+    },
+    {
+      "nome": "Immagine a tessere",
+      "tipo": "immagine",
+      "descrizione": "L'immagine si scopre una tessera alla volta. Prima prenoti, piu' vale.",
+      "modo": "puzzle",
+      "verso": "comparsa",
+      "griglia": [
+        4,
+        3
+      ],
+      "puntiIniziali": 30,
+      "puntiMinimi": 5,
+      "intervalloMs": 1500,
+      "puntiErrore": 5,
+      "domande": [
+        {
+          "media": "/media/demo-torre.svg",
+          "risposta": "La Torre Eiffel",
+          "accettate": [
+            "Torre Eiffel",
+            "Parigi"
+          ],
+          "note": "Se dicono solo 'Parigi' decidi tu se accettarla."
+        },
+        {
+          "media": "/media/demo-banana.svg",
+          "risposta": "Una banana",
+          "accettate": [
+            "banana"
+          ]
+        }
+      ]
+    },
+    {
+      "nome": "Fuori fuoco",
+      "tipo": "immagine",
+      "descrizione": "L'immagine parte sfocata e si mette a fuoco piano piano.",
+      "modo": "sfocatura",
+      "passi": 12,
+      "puntiIniziali": 25,
+      "puntiMinimi": 5,
+      "intervalloMs": 1200,
+      "domande": [
+        {
+          "media": "/media/demo-pacman.svg",
+          "risposta": "Pac-Man",
+          "accettate": [
+            "pacman",
+            "pac man"
+          ]
+        }
+      ]
+    },
+    {
+      "nome": "Memoria fotografica",
+      "tipo": "immagine",
+      "descrizione": "L'immagine e' tutta visibile e sparisce un pezzo alla volta. Guardate bene.",
+      "modo": "puzzle",
+      "verso": "scomparsa",
+      "griglia": [
+        5,
+        4
+      ],
+      "puntiIniziali": 20,
+      "puntiMinimi": 20,
+      "intervalloMs": 900,
+      "domande": [
+        {
+          "media": "/media/demo-torre.svg",
+          "testo": "Di che colore era il cielo dietro il monumento?",
+          "risposta": "Arancione, con il sole basso a destra"
+        }
+      ]
+    },
+    {
+      "nome": "Indovina la sigla",
+      "tipo": "audio",
+      "descrizione": "Parte la traccia. Il primo buzz mette in pausa tutto.",
+      "modo": "normale",
+      "passi": 10,
+      "puntiIniziali": 25,
+      "puntiMinimi": 5,
+      "intervalloMs": 1000,
+      "puntiErrore": 5,
+      "domande": [
+        {
+          "media": "/media/demo-melodia.wav",
+          "risposta": "La scala di Do maggiore",
+          "note": "Traccia di prova generata: e' solo una scala che sale e scende."
+        }
+      ]
+    },
+    {
+      "nome": "Indovinelli",
+      "tipo": "indovinello",
+      "descrizione": "Un indizio alla volta. Ogni indizio in piu' vale meno punti.",
+      "puntiIniziali": 40,
+      "puntiMinimi": 10,
+      "intervalloMs": 8000,
+      "puntiErrore": 5,
+      "domande": [
+        {
+          "indizi": [
+            "Sono nato in Europa piu' di duemila anni fa.",
+            "Mi trovi in ogni cucina, ma quasi nessuno mi mangia da solo.",
+            "Divento rosso solo dopo un lungo viaggio dall'America.",
+            "Senza di me la pizza sarebbe bianca."
+          ],
+          "risposta": "Il pomodoro",
+          "accettate": [
+            "pomodoro",
+            "pomodori"
+          ]
+        }
+      ]
+    },
+    {
+      "nome": "A scelta multipla",
+      "tipo": "multipla",
+      "descrizione": "Quattro opzioni sul tabellone. Si risponde a voce dopo il buzz.",
+      "punti": 15,
+      "puntiErrore": 5,
+      "secondi": 20,
+      "domande": [
+        {
+          "testo": "Quale di questi pianeti ha il giorno piu' lungo?",
+          "opzioni": [
+            "Mercurio",
+            "Venere",
+            "Marte",
+            "Nettuno"
+          ],
+          "corretta": 1,
+          "risposta": "Venere",
+          "note": "Un giorno su Venere dura piu' del suo anno."
+        }
+      ]
+    },
+    {
+      "nome": "Il tabellone",
+      "tipo": "tabellone",
+      "descrizione": "Cinque argomenti, cinque livelli. Piu' si scende, piu' vale — e piu' fa male sbagliare.",
+      "puntiErrore": 10,
+      "secondi": 25,
+      "colonne": [
+        {
+          "titolo": "Storia",
+          "caselle": [
+            {
+              "testo": "In che anno e' finita la Seconda guerra mondiale?",
+              "risposta": "1945",
+              "valore": 100
+            },
+            {
+              "testo": "Chi ha guidato la prima circumnavigazione del globo?",
+              "risposta": "Ferdinando Magellano",
+              "accettate": [
+                "Magellano"
+              ],
+              "note": "Mori' per strada: la spedizione la chiuse Elcano.",
+              "valore": 200
+            },
+            {
+              "testo": "Quale impero fu governato da Giustiniano?",
+              "risposta": "L'Impero bizantino",
+              "accettate": [
+                "bizantino",
+                "romano d'oriente"
+              ],
+              "valore": 300
+            },
+            {
+              "testo": "In che secolo visse Leonardo da Vinci?",
+              "risposta": "Fra Quattrocento e Cinquecento",
+              "accettate": [
+                "XV e XVI",
+                "1400 e 1500"
+              ],
+              "valore": 400
+            },
+            {
+              "testo": "Come si chiamava la citta' sepolta dal Vesuvio insieme a Pompei?",
+              "risposta": "Ercolano",
+              "valore": 500
+            }
+          ]
+        },
+        {
+          "titolo": "Geografia",
+          "caselle": [
+            {
+              "testo": "Qual e' la capitale del Portogallo?",
+              "risposta": "Lisbona",
+              "valore": 100
+            },
+            {
+              "testo": "Quanti sono i mari che bagnano l'Italia?",
+              "risposta": "Quattro",
+              "accettate": [
+                "4"
+              ],
+              "note": "Ligure, Tirreno, Ionio, Adriatico.",
+              "valore": 200
+            },
+            {
+              "testo": "Qual e' il lago piu' grande d'Italia?",
+              "risposta": "Il lago di Garda",
+              "valore": 300
+            },
+            {
+              "testo": "In quale stato si trova il deserto di Atacama?",
+              "risposta": "Cile",
+              "valore": 400
+            },
+            {
+              "testo": "Qual e' l'unico stato al mondo dentro una citta'?",
+              "risposta": "La Citta' del Vaticano",
+              "accettate": [
+                "Vaticano"
+              ],
+              "valore": 500
+            }
+          ]
+        },
+        {
+          "titolo": "Immagini",
+          "caselle": [
+            {
+              "risposta": "Una banana",
+              "tipo": "immagine",
+              "media": "/media/demo-banana.svg",
+              "modo": "sfocatura",
+              "passi": 8,
+              "intervalloMs": 1200,
+              "accettate": [
+                "banana"
+              ],
+              "valore": 100
+            },
+            {
+              "risposta": "Pac-Man",
+              "tipo": "immagine",
+              "media": "/media/demo-pacman.svg",
+              "modo": "pixel",
+              "passi": 10,
+              "intervalloMs": 1000,
+              "accettate": [
+                "pacman"
+              ],
+              "valore": 200
+            },
+            {
+              "risposta": "La Torre Eiffel",
+              "tipo": "immagine",
+              "media": "/media/demo-torre.svg",
+              "modo": "puzzle",
+              "griglia": [
+                4,
+                3
+              ],
+              "intervalloMs": 1400,
+              "accettate": [
+                "Torre Eiffel"
+              ],
+              "valore": 300
+            },
+            {
+              "risposta": "Pac-Man",
+              "tipo": "immagine",
+              "media": "/media/demo-pacman.svg",
+              "modo": "zoom",
+              "passi": 10,
+              "intervalloMs": 1100,
+              "accettate": [
+                "pacman"
+              ],
+              "valore": 400
+            },
+            {
+              "testo": "Di che colore e' il cielo dietro il monumento?",
+              "risposta": "Arancione, con il sole basso a destra",
+              "tipo": "immagine",
+              "media": "/media/demo-torre.svg",
+              "modo": "puzzle",
+              "verso": "scomparsa",
+              "griglia": [
+                5,
+                4
+              ],
+              "intervalloMs": 800,
+              "valore": 500
+            }
+          ]
+        },
+        {
+          "titolo": "Musica",
+          "caselle": [
+            {
+              "testo": "Quante note ha una scala maggiore, contando l'ottava?",
+              "risposta": "Otto",
+              "accettate": [
+                "8"
+              ],
+              "valore": 100
+            },
+            {
+              "testo": "Quale strumento suonava Louis Armstrong?",
+              "risposta": "La tromba",
+              "valore": 200
+            },
+            {
+              "risposta": "La scala di Do maggiore",
+              "tipo": "audio",
+              "media": "/media/demo-melodia.wav",
+              "modo": "normale",
+              "passi": 8,
+              "intervalloMs": 1000,
+              "valore": 300
+            },
+            {
+              "testo": "Chi ha scritto le Quattro stagioni?",
+              "risposta": "Antonio Vivaldi",
+              "accettate": [
+                "Vivaldi"
+              ],
+              "valore": 400
+            },
+            {
+              "risposta": "La scala di Do maggiore",
+              "tipo": "audio",
+              "media": "/media/demo-melodia.wav",
+              "modo": "distorto",
+              "passi": 10,
+              "intervalloMs": 900,
+              "note": "Parte impastata e si schiarisce.",
+              "valore": 500
+            }
+          ]
+        },
+        {
+          "titolo": "Scienza",
+          "caselle": [
+            {
+              "testo": "Quanti pianeti ha il sistema solare?",
+              "risposta": "Otto",
+              "accettate": [
+                "8"
+              ],
+              "valore": 100
+            },
+            {
+              "testo": "Qual e' il simbolo chimico dell'oro?",
+              "risposta": "Au",
+              "valore": 200
+            },
+            {
+              "testo": "Che cosa misura la scala Richter?",
+              "risposta": "La magnitudo dei terremoti",
+              "accettate": [
+                "terremoti"
+              ],
+              "valore": 300
+            },
+            {
+              "testo": "Quale gas respirano le piante per la fotosintesi?",
+              "risposta": "L'anidride carbonica",
+              "accettate": [
+                "CO2"
+              ],
+              "valore": 400
+            },
+            {
+              "testo": "Quanto tempo impiega la luce del Sole ad arrivare sulla Terra?",
+              "risposta": "Circa otto minuti",
+              "accettate": [
+                "8 minuti"
+              ],
+              "valore": 500
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

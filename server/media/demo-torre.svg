@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <linearGradient id="cielo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3d1e5c"/>
+      <stop offset="45%" stop-color="#c4462b"/>
+      <stop offset="80%" stop-color="#ff9d3c"/>
+      <stop offset="100%" stop-color="#ffd88a"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#cielo)"/>
+  <circle cx="640" cy="430" r="52" fill="#fff0b8" opacity="0.95"/>
+  <rect y="520" width="800" height="80" fill="#2a1436"/>
+  <g fill="#241029">
+    <polygon points="400,60 412,110 388,110"/>
+    <rect x="394" y="105" width="12" height="60"/>
+    <polygon points="378,165 422,165 434,270 366,270"/>
+    <rect x="362" y="262" width="76" height="14"/>
+    <polygon points="366,276 434,276 458,400 342,400"/>
+    <rect x="336" y="392" width="128" height="16"/>
+    <polygon points="342,408 458,408 510,528 290,528"/>
+    <polygon points="352,470 448,470 448,528 352,528" fill="url(#cielo)" opacity="0.35"/>
+    <rect x="284" y="520" width="232" height="14"/>
+  </g>
+  <g stroke="#241029" stroke-width="3" fill="none" opacity="0.7">
+    <path d="M352 528 L400 430 L448 528"/>
+    <path d="M368 470 L432 470"/>
+  </g>
+</svg>

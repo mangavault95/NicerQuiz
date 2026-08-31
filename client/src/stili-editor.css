@@ -1,0 +1,303 @@
+/* Stili della parte di costruzione: editor, griglia a caselle, anteprime.
+   Il gioco vero e proprio sta in stili.css. */
+
+/* ------------------------------------------------- anteprima in regia */
+
+.pannello-anteprima { padding: 12px; }
+.nota-anteprima { font-size: .72rem; color: var(--tenue); }
+
+/* Il palco ha misure fisse e viene rimpicciolito tutto insieme: quello che il
+   presentatore vede nel riquadro e' il tabellone vero, solo in scala. */
+.anteprima {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid var(--bordo);
+  background: var(--fondo);
+}
+.anteprima-palco {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  pointer-events: none;
+}
+.tabellone.in-anteprima {
+  background: radial-gradient(900px 600px at 20% -10%, #241f47 0%, var(--fondo) 60%);
+}
+
+/* ------------------------------------------------ griglia a caselle */
+
+.griglia-tabellone { width: 100%; height: 100%; display: flex; }
+.griglia-colonne { flex: 1; display: grid; gap: 10px; min-height: 0; }
+.colonna-tabellone { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+
+.argomento {
+  background: linear-gradient(135deg, var(--viola), #a487ff);
+  border-radius: 10px;
+  padding: .5em .4em;
+  font-weight: 800;
+  font-size: clamp(.7rem, 1.3cqw, 1.05rem);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  min-height: 2.6em;
+}
+
+.casella {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  background: var(--carta);
+  border: 1px solid var(--bordo);
+  border-radius: 10px;
+  color: var(--accento);
+  font-weight: 900;
+  font-size: clamp(1rem, 2.6cqw, 2.2rem);
+  font-variant-numeric: tabular-nums;
+  transition: background .2s ease, transform .2s ease;
+}
+button.casella { cursor: pointer; }
+button.casella:hover { background: var(--carta-2); transform: translateY(-2px); }
+.casella.usata { background: transparent; border-style: dashed; opacity: .3; }
+.casella.scelta { outline: 3px solid var(--accento); }
+
+.griglia-tabellone.compatta .argomento { font-size: .68rem; min-height: 2.2em; padding: .35em; }
+.griglia-tabellone.compatta .casella { font-size: 1rem; min-height: 2.3em; }
+.griglia-tabellone.compatta .griglia-colonne { gap: 6px; }
+
+.badge.argomento {
+  background: var(--viola);
+  border: none;
+  min-height: 0;
+  display: inline;
+  font-size: .7rem;
+  letter-spacing: .1em;
+  padding: .25em .7em;
+}
+
+.riga-domanda.usata { opacity: .4; text-decoration: line-through; }
+
+/* ------------------------------------------------------------- editor */
+
+.editor { display: flex; flex-direction: column; height: 100%; }
+
+.editor-testata {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--bordo);
+}
+.editor-identita { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 260px; }
+.editor-comandi { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.messaggio-ok { color: var(--giusto); font-size: .82rem; }
+
+.titolo-quiz {
+  font-size: 1.3rem;
+  font-weight: 800;
+  background: transparent;
+  border: 1px solid transparent;
+  max-width: 26ch;
+}
+.titolo-quiz:hover, .titolo-quiz:focus { border-color: var(--bordo); background: var(--fondo-2); }
+
+.pallino-modifica { width: 9px; height: 9px; border-radius: 50%; background: var(--accento); flex: none; }
+.errore-editor { margin: 10px 20px 0; }
+
+.editor-corpo {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px 20px 24px;
+  flex: 1;
+  min-height: 0;
+}
+.editor-elenco { gap: 10px; }
+.editor-lavoro { overflow-y: auto; }
+.riga-quiz.corrente { border-color: var(--accento); }
+
+.elenco-modifica { display: grid; gap: 5px; }
+.elenco-modifica li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--carta);
+  border-left: 3px solid transparent;
+  border-radius: 10px;
+  padding: 3px 6px;
+}
+.elenco-modifica li.corrente { border-left-color: var(--accento); background: var(--carta-2); }
+.voce-modifica {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  background: none;
+  border: none;
+  padding: .35em .2em;
+  text-align: left;
+  cursor: pointer;
+}
+.voce-modifica .numero { color: var(--tenue); font-size: .76rem; flex: none; }
+.voce-modifica .etichetta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .88rem;
+}
+.comandi-elemento { display: flex; gap: 2px; flex: none; align-items: center; }
+
+/* ------------------------------------------------------ campi editor */
+
+.griglia-campi, .modifica-domanda {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.campo-editor { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.campo-etichetta {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--tenue);
+}
+.campo-aiuto { font-size: .72rem; color: var(--tenue); }
+.blocco-largo { grid-column: 1 / -1; }
+
+textarea {
+  background: var(--fondo-2);
+  border: 1px solid var(--bordo);
+  border-radius: 10px;
+  padding: .6em .8em;
+  width: 100%;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.due-numeri { display: flex; align-items: center; gap: 6px; }
+.due-numeri input { width: 4.5em; }
+
+.lista-testi { display: grid; gap: 5px; }
+.riga-testo { display: flex; align-items: center; gap: 5px; }
+.riga-testo input { flex: 1; min-width: 0; }
+.indice-riga {
+  flex: none;
+  width: 1.7em;
+  height: 1.7em;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--carta-2);
+  color: var(--accento);
+  font-size: .74rem;
+  font-weight: 800;
+}
+
+.modifica-round { display: grid; gap: 18px; }
+.blocco-domande { display: grid; gap: 10px; }
+.blocco-domande h3 { font-size: .95rem; margin: 0; }
+.riquadro-domanda {
+  border: 1px solid var(--bordo);
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--carta);
+}
+.riquadro-domanda .titolo-con-azione { margin-bottom: 12px; align-items: flex-end; gap: 12px; }
+
+/* --------------------------------------------- tabellone nell'editor */
+
+.editor-tabellone { display: grid; gap: 6px; align-items: stretch; }
+.testa-colonna { display: grid; gap: 4px; }
+.testa-colonna input { font-weight: 700; text-align: center; }
+.valore-riga { text-align: center; font-weight: 800; color: var(--accento); }
+
+.casella-editor {
+  display: grid;
+  gap: 2px;
+  background: var(--fondo-2);
+  border: 1px solid var(--bordo);
+  border-radius: 10px;
+  padding: .5em .4em;
+  cursor: pointer;
+  min-height: 3.4em;
+  text-align: center;
+  min-width: 0;
+}
+.casella-editor:hover { background: var(--carta-2); }
+.casella-editor.scelta { border-color: var(--accento); background: var(--carta-2); }
+.casella-editor.piena .valore { color: var(--giusto); }
+.casella-editor .valore { font-weight: 800; color: var(--tenue); font-size: .9rem; }
+.casella-editor .anteprima-testo {
+  font-size: .7rem;
+  color: var(--tenue);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------- media e anteprime */
+
+.scelta-media { display: grid; gap: 8px; }
+.media-scelto { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.media-scelto img { max-height: 130px; border-radius: 10px; border: 1px solid var(--bordo); }
+.media-scelto audio { max-width: 320px; }
+.media-scelto code { font-size: .74rem; color: var(--tenue); }
+.comandi-media { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.libreria-media {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--bordo);
+  border-radius: 10px;
+  background: var(--fondo-2);
+}
+.voce-libreria {
+  display: grid;
+  gap: 4px;
+  background: var(--carta);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+}
+.voce-libreria:hover { border-color: var(--viola); }
+.voce-libreria.scelta { border-color: var(--accento); }
+.voce-libreria img { width: 100%; height: 62px; object-fit: cover; border-radius: 6px; }
+.icona-audio {
+  display: grid;
+  place-items: center;
+  height: 62px;
+  font-size: 1.6rem;
+  color: var(--accento);
+  background: var(--fondo-2);
+  border-radius: 6px;
+}
+.nome-media {
+  font-size: .66rem;
+  color: var(--tenue);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anteprima-rivelazione { display: grid; gap: 8px; justify-items: start; }
+.anteprima-rivelazione .rivelatore-foto { max-height: 300px; }
+.anteprima-rivelazione input[type="range"] { width: 100%; padding: 0; }
+
+@media (max-width: 1000px) {
+  .editor-corpo { grid-template-columns: 1fr; overflow-y: auto; }
+  .griglia-campi, .modifica-domanda { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
