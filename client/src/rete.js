@@ -55,6 +55,30 @@ export function useCollegato() {
   return collegato;
 }
 
+/**
+ * Carica una foto o una traccia sul server e restituisce { url } oppure
+ * { errore }. Il file viaggia come data URL: nessuna dipendenza in piu' per il
+ * multipart, e chi carica puo' gia' vedere l'anteprima prima di inviare.
+ */
+export async function caricaMedia(file) {
+  try {
+    const dati = await new Promise((risolvi, rifiuta) => {
+      const lettore = new FileReader();
+      lettore.onload = () => risolvi(lettore.result);
+      lettore.onerror = () => rifiuta(new Error('lettura fallita'));
+      lettore.readAsDataURL(file);
+    });
+
+    return await fetch(URL_SERVER + '/api/media', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome: file.name, dati }),
+    }).then((r) => r.json());
+  } catch {
+    return { errore: 'Non sono riuscito a caricare il file' };
+  }
+}
+
 /** Identita' del giocatore: resta nel telefono, cosi' la riconnessione tiene i punti. */
 export function identitaGiocatore() {
   let id = localStorage.getItem('nicerquiz:id');

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { URL_SERVER, urlMedia } from '../../rete.js';
+import { URL_SERVER, caricaMedia, urlMedia } from '../../rete.js';
 
 /**
  * Scelta di una foto o di una traccia: si carica dal computer oppure si
@@ -28,27 +28,11 @@ export default function SceltaMedia({ valore, onCambia, tipo = 'immagine' }) {
 
     setInCorso(true);
     setErrore(null);
-    try {
-      const dati = await new Promise((risolvi, rifiuta) => {
-        const lettore = new FileReader();
-        lettore.onload = () => risolvi(lettore.result);
-        lettore.onerror = () => rifiuta(new Error('lettura fallita'));
-        lettore.readAsDataURL(file);
-      });
+    const risposta = await caricaMedia(file);
+    setInCorso(false);
 
-      const risposta = await fetch(URL_SERVER + '/api/media', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: file.name, dati }),
-      }).then((r) => r.json());
-
-      if (risposta.errore) setErrore(risposta.errore);
-      else onCambia(risposta.url);
-    } catch {
-      setErrore('Non sono riuscito a caricare il file');
-    } finally {
-      setInCorso(false);
-    }
+    if (risposta.errore) setErrore(risposta.errore);
+    else onCambia(risposta.url);
   }
 
   return (

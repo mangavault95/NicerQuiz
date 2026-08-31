@@ -223,6 +223,112 @@ await azione({ tipo: 'griglia' });
 const annullata = await attendiStato(tabellone, (s) => s.fase === 'attesa', 'casella annullata');
 verifica('tornando indietro la casella non si consuma', annullata.griglia.restanti === 24, String(annullata.griglia.restanti));
 
+// --- Round a turno: i buzzer restano spenti ---------------------------------
+// Il quiz di prova non ne ha uno, quindi ne apriamo una stanza apposta.
+const regiaGiro = collega();
+await new Promise((r) => regiaGiro.on('connect', r));
+
+const quizGiro = {
+  titolo: 'Prova a turno',
+  round: [{
+    nome: 'A turno con rimbalzo',
+    tipo: 'secca',
+    risposte: 'giro',
+    rimbalzo: true,
+    puntiIniziali: 10,
+    puntiErrore: 4,
+    domande: [
+      { testo: 'Prima', risposta: 'uno' },
+      { testo: 'Seconda', risposta: 'due' },
+      { testo: 'Terza', risposta: 'tre' },
+    ],
+  }],
+};
+
+const stanzaGiro = await chiedi(regiaGiro, 'regia:crea', { quiz: quizGiro });
+verifica('si puo\' creare un round a turno', Boolean(stanzaGiro.codice), JSON.stringify(stanzaGiro));
+
+const schermoGiro = collega();
+const carla = collega();
+const dario = collega();
+const elena = collega();
+await chiedi(schermoGiro, 'tabellone:entra', { codice: stanzaGiro.codice });
+await chiedi(carla, 'giocatore:entra', { codice: stanzaGiro.codice, nome: 'Carla', id: 'carla' });
+await chiedi(dario, 'giocatore:entra', { codice: stanzaGiro.codice, nome: 'Dario', id: 'dario' });
+await chiedi(elena, 'giocatore:entra', { codice: stanzaGiro.codice, nome: 'Elena', id: 'elena' });
+
+const azioneGiro = (dati) => chiedi(regiaGiro, 'regia:azione', dati);
+await azioneGiro({ tipo: 'round', indice: 0 });
+await azioneGiro({ tipo: 'domanda', indice: 0 });
+await azioneGiro({ tipo: 'apri' });
+
+const giroAperto = await attendiStato(schermoGiro, (s) => s.fase === 'aperta', 'round a turno aperto');
+verifica('il round dichiara che si gioca a turno', giroAperto.modoRisposte === 'giro', giroAperto.modoRisposte);
+verifica('tocca al primo del giro', giroAperto.turno?.nome === 'Carla', JSON.stringify(giroAperto.turno));
+verifica('l\'ordine del giro e\' quello di arrivo',
+  giroAperto.giocatoriInOrdine.map((g) => g.nome).join(',') === 'Carla,Dario,Elena',
+  giroAperto.giocatoriInOrdine.map((g) => g.nome).join(','));
+
+const buzzInutile = await chiedi(elena, 'giocatore:prenota');
+verifica('a turno il buzzer non fa niente', buzzInutile.posizione === null, JSON.stringify(buzzInutile));
+
+// Carla sbaglia: -4 e la domanda rimbalza a Dario, che indovina.
+await azioneGiro({ tipo: 'giudica', idGiocatore: 'carla', esito: 'sbagliato' });
+const rimbalzata = await attendiStato(schermoGiro, (s) => s.turno?.nome === 'Dario', 'rimbalzo a Dario');
+verifica('chi sbaglia prende il malus anche a turno', trovaIn(rimbalzata, 'Carla').punti === -4, String(trovaIn(rimbalzata, 'Carla').punti));
+verifica('con il rimbalzo la domanda resta aperta', rimbalzata.fase === 'aperta', rimbalzata.fase);
+
+await azioneGiro({ tipo: 'giudica', idGiocatore: 'dario', esito: 'giusto' });
+const giroVinto = await attendiStato(schermoGiro, (s) => s.fase === 'rivelata', 'prima domanda a turno chiusa');
+verifica('chi risponde nel rimbalzo prende i punti', trovaIn(giroVinto, 'Dario').punti === 10, String(trovaIn(giroVinto, 'Dario').punti));
+
+// Domanda successiva: la mano passa avanti di uno rispetto a chi aveva iniziato.
+await azioneGiro({ tipo: 'prossima' });
+const secondoGiro = await attendiStato(schermoGiro, (s) => s.indiceDomanda === 1, 'seconda domanda a turno');
+verifica('alla domanda dopo la mano passa al prossimo', secondoGiro.turno?.nome === 'Dario', JSON.stringify(secondoGiro.turno));
+
+// Il presentatore puo' sempre correggere a chi tocca.
+await azioneGiro({ tipo: 'turno', idGiocatore: 'elena' });
+const turnoForzato = await attendiStato(schermoGiro, (s) => s.turno?.nome === 'Elena', 'turno forzato');
+verifica('il presentatore puo\' passare la mano a chi vuole', turnoForzato.turno.id === 'elena');
+
+// E puo' riordinare il giro.
+await azioneGiro({ tipo: 'ordine', idGiocatore: 'elena', delta: -1 });
+const riordinato = await attendiStato(schermoGiro,
+  (s) => s.giocatoriInOrdine.map((g) => g.nome).join(',') === 'Carla,Elena,Dario', 'giro riordinato');
+verifica('il giro si puo\' riordinare',
+  riordinato.giocatoriInOrdine.map((g) => g.nome).join(',') === 'Carla,Elena,Dario');
+
+// --- Le foto dei partecipanti ----------------------------------------------
+const puntino = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAF0lEQVQIW2P8z8Dwn4EIwDiqkL4hBQCxlwX9K5mCzwAAAABJRU5ErkJggg==';
+const caricata = await fetch(INDIRIZZO + '/api/media', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ nome: 'faccia.png', dati: puntino }),
+}).then((r) => r.json());
+verifica('la foto del partecipante si carica', Boolean(caricata.url), JSON.stringify(caricata));
+
+await chiedi(carla, 'giocatore:avatar', { url: caricata.url });
+const conFoto = await attendiStato(schermoGiro, (s) => trovaIn(s, 'Carla').avatar, 'foto di Carla');
+verifica('la foto arriva sul tabellone', trovaIn(conFoto, 'Carla').avatar === caricata.url, String(trovaIn(conFoto, 'Carla').avatar));
+
+const fotoFinta = await chiedi(dario, 'giocatore:avatar', { url: 'https://sito-esterno.example/foto.png' });
+verifica('un indirizzo esterno viene rifiutato', fotoFinta.errore === 'Immagine non valida', JSON.stringify(fotoFinta));
+
+await azioneGiro({ tipo: 'avatar', idGiocatore: 'dario', url: caricata.url });
+const fotoDaRegia = await attendiStato(schermoGiro, (s) => trovaIn(s, 'Dario').avatar, 'foto messa dalla regia');
+verifica('anche il presentatore puo\' mettere la foto a qualcuno', trovaIn(fotoDaRegia, 'Dario').avatar === caricata.url);
+
+await fetch(INDIRIZZO + '/api/media/' + caricata.file, { method: 'DELETE' });
+
+// --- Il buzzer resta acceso dove non si e' chiesto altro --------------------
+verifica('il quiz normale resta al buzzer', annullata.modoRisposte === 'buzzer', annullata.modoRisposte);
+verifica('senza round a turno non c\'e\' nessuna mano assegnata', annullata.turno === null, JSON.stringify(annullata.turno));
+
+function trovaIn(stato, nome) {
+  return stato.giocatori.find((g) => g.nome === nome) ?? {};
+}
+
 // --- Stanza inesistente -----------------------------------------------------
 const intruso = collega();
 const rifiuto = await chiedi(intruso, 'giocatore:entra', { codice: 'ZZZZ', nome: 'Nessuno', id: 'x' });
@@ -235,5 +341,6 @@ function trova(stato, nome) {
 }
 
 console.log(falliti === 0 ? '\nTutto a posto.' : `\n${falliti} controlli falliti.`);
-[regia, tabellone, anna, bruno, annaRitorna, intruso].forEach((p) => p.disconnect());
+[regia, tabellone, anna, bruno, annaRitorna, intruso,
+ regiaGiro, schermoGiro, carla, dario, elena].forEach((p) => p.disconnect());
 process.exit(falliti === 0 ? 0 : 1);

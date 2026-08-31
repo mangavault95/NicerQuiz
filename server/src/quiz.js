@@ -12,6 +12,12 @@ export const TIPI_ROUND = ['secca', 'immagine', 'audio', 'indovinello', 'multipl
 /** Dentro un tabellone ogni casella puo' essere di un tipo diverso. */
 export const TIPI_CONTENUTO = ['secca', 'immagine', 'audio', 'indovinello', 'multipla'];
 
+/**
+ * Come si risponde in un round: al buzzer, oppure a turno seguendo l'ordine
+ * dei partecipanti. Si sceglie round per round, non una volta per tutte.
+ */
+export const MODI_RISPOSTA = ['buzzer', 'giro'];
+
 /** Che cosa va mostrato per questa domanda: il tipo della casella, se c'e'. */
 export function tipoContenuto(domanda, round) {
   if (!round) return null;
@@ -59,6 +65,9 @@ export function validaQuiz(quiz) {
   for (const [i, round] of quiz.round.entries()) {
     const dove = `Round ${i + 1}`;
     if (!TIPI_ROUND.includes(round.tipo)) return `${dove}: tipo "${round.tipo}" sconosciuto`;
+    if (round.risposte && !MODI_RISPOSTA.includes(round.risposte)) {
+      return `${dove}: non so cosa voglia dire rispondere "${round.risposte}"`;
+    }
 
     if (round.tipo === 'tabellone') {
       if (!Array.isArray(round.colonne) || round.colonne.length === 0) {

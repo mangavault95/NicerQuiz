@@ -4,6 +4,7 @@ import LettoreAudio from './LettoreAudio.jsx';
 import Classifica from './Classifica.jsx';
 import Cronometro from './Cronometro.jsx';
 import GrigliaTabellone from './GrigliaTabellone.jsx';
+import PedineGiocatori from './PedineGiocatori.jsx';
 
 /**
  * Lo schermo che vedono tutti, disegnato a partire dal solo stato pubblico.
@@ -79,6 +80,18 @@ export default function VistaTabellone({ stato, anteprima = false }) {
         </div>
       )}
 
+      {/* A turno non c'e' nessun buzz da annunciare: si dice a chi tocca. */}
+      {stato.modoRisposte === 'giro' && stato.turno &&
+        fase !== 'classifica' && fase !== 'rivelata' && (
+        <div className="fascia-turno" style={{ '--colore': stato.turno.colore }}>
+          <span className="etichetta">Tocca a</span>
+          <strong>{stato.turno.nome}</strong>
+          {stato.rimbalzo && fase === 'aperta' && (
+            <span className="nota-turno">se sbaglia, rimbalza al prossimo</span>
+          )}
+        </div>
+      )}
+
       {fase === 'rivelata' && contenuto?.risposta && (
         <div className="fascia-risposta">
           <span className="etichetta">Risposta</span>
@@ -87,7 +100,11 @@ export default function VistaTabellone({ stato, anteprima = false }) {
       )}
 
       <footer className="tabellone-piede">
-        <Classifica giocatori={giocatori} striscia evidenzia={primo?.idGiocatore} />
+        <PedineGiocatori
+          giocatori={stato.giocatoriInOrdine ?? giocatori}
+          evidenzia={primo?.idGiocatore}
+          turno={stato.modoRisposte === 'giro' ? stato.turno?.id : null}
+        />
       </footer>
     </div>
   );

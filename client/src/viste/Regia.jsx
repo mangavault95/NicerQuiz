@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { chiedi, urlMedia, useCollegato, useStato } from '../rete.js';
+import { useEffect, useRef, useState } from 'react';
+import { caricaMedia, chiedi, urlMedia, useCollegato, useStato } from '../rete.js';
 import RivelatoreImmagine from '../componenti/RivelatoreImmagine.jsx';
 import Classifica from '../componenti/Classifica.jsx';
 import Cronometro from '../componenti/Cronometro.jsx';
@@ -29,7 +29,12 @@ export default function Regia({ codiceIniziale }) {
     function alTasto(e) {
       const dentroCampo = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
       if (dentroCampo || !stato) return;
-      const primo = stato.prenotazioni[0];
+
+      // A turno si giudica chi ha la mano, al buzzer chi ha prenotato per primo.
+      const bersaglio = stato.modoRisposte === 'giro'
+        ? (stato.turno ? { idGiocatore: stato.turno.id } : null)
+        : stato.prenotazioni[0];
+      const primo = bersaglio;
 
       const scorciatoie = {
         ' ': () => {
@@ -311,6 +316,63 @@ function PannelloComandi({ stato, azione }) {
 }
 
 function PannelloBuzz({ stato, azione }) {
+  // Round a turno: non c'e' una coda da gestire, c'e' una persona sola.
+  if (stato.modoRisposte === 'giro') {
+    if (!stato.turno) {
+      return (
+        <section className="pannello">
+          <p className="vuoto">Round a turno, ma non e&apos; ancora entrato nessuno.</p>
+        </section>
+      );
+    }
+
+    return (
+      <section className="pannello coda-buzz">
+        <div className="titolo-con-azione">
+          <h2>A turno</h2>
+          <span className="nota-anteprima">
+            {stato.rimbalzo ? 'chi sbaglia passa al prossimo' : 'chi sbaglia chiude la domanda'}
+          </span>
+        </div>
+
+        <ol>
+          <li style={{ '--colore': stato.turno.colore }}>
+            <span className="ordine">▶</span>
+            <span className="nome">{stato.turno.nome}</span>
+            <span className="tempo">{stato.punti} pt</span>
+            <button
+              className="bottone giusto"
+              onClick={() => azione('giudica', { idGiocatore: stato.turno.id, esito: 'giusto' })}
+            >
+              Giusto
+            </button>
+            <button
+              className="bottone sbagliato"
+              onClick={() => azione('giudica', { idGiocatore: stato.turno.id, esito: 'sbagliato' })}
+            >
+              Sbagliato
+            </button>
+          </li>
+        </ol>
+
+        <div className="passa-turno">
+          <span className="campo-etichetta">Passa la mano a</span>
+          <div className="fila-comandi">
+            {stato.giocatoriInOrdine.map((g) => (
+              <button
+                key={g.id}
+                className={'bottone minuscolo' + (g.id === stato.turno.id ? ' acceso' : ' fantasma')}
+                onClick={() => azione('turno', { idGiocatore: g.id })}
+              >
+                {g.nome}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (stato.prenotazioni.length === 0) {
     return (
       <section className="pannello">
@@ -365,12 +427,34 @@ function PannelloGiocatori({ stato, azione }) {
       <Classifica giocatori={stato.giocatori} />
 
       <div className="controlli-punti">
-        {stato.giocatori.map((g) => (
-          <div key={g.id} className="controllo-giocatore" style={{ '--colore': g.colore }}>
+        {stato.giocatoriInOrdine.map((g, i) => (
+          <div
+            key={g.id}
+            className={'controllo-giocatore' + (stato.turno?.id === g.id ? ' di-turno' : '')}
+            style={{ '--colore': g.colore }}
+          >
             <div className="controllo-nome">
-              <span className="pallino" />
+              <FotoDiGioco giocatore={g} azione={azione} />
               <strong>{g.nome}</strong>
               {!g.connesso && <em>offline</em>}
+              <span className="ordine-giro">
+                <button
+                  className="bottone minuscolo fantasma"
+                  title="prima nel giro"
+                  disabled={i === 0}
+                  onClick={() => azione('ordine', { idGiocatore: g.id, delta: -1 })}
+                >
+                  ↑
+                </button>
+                <button
+                  className="bottone minuscolo fantasma"
+                  title="dopo nel giro"
+                  disabled={i === stato.giocatoriInOrdine.length - 1}
+                  onClick={() => azione('ordine', { idGiocatore: g.id, delta: 1 })}
+                >
+                  ↓
+                </button>
+              </span>
             </div>
             <div className="controllo-bottoni">
               {[-5, -1, 1, 5].map((d) => (
@@ -427,6 +511,39 @@ function PannelloGiocatori({ stato, azione }) {
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * La foto del giocatore, caricabile anche dalla regia: non tutti si mettono
+ * a cercarsi una foto dal telefono a serata iniziata.
+ */
+function FotoDiGioco({ giocatore, azione }) {
+  const fileRef = useRef(null);
+  const [inCorso, setInCorso] = useState(false);
+
+  async function scegli(evento) {
+    const file = evento.target.files?.[0];
+    evento.target.value = '';
+    if (!file) return;
+    setInCorso(true);
+    const risposta = await caricaMedia(file);
+    setInCorso(false);
+    if (risposta.url) azione('avatar', { idGiocatore: giocatore.id, url: risposta.url });
+  }
+
+  return (
+    <button
+      className="foto-di-gioco"
+      title={giocatore.avatar ? 'cambia la foto' : 'metti una foto'}
+      onClick={() => fileRef.current?.click()}
+    >
+      {giocatore.avatar
+        ? <img src={urlMedia(giocatore.avatar)} alt="" />
+        : <span className="pallino" />}
+      {inCorso && <span className="caricamento">…</span>}
+      <input ref={fileRef} type="file" accept="image/*" hidden onChange={scegli} />
+    </button>
   );
 }
 

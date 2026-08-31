@@ -281,6 +281,18 @@ io.on('connection', (socket) => {
     trasmetti(stanza);
   });
 
+  /** La foto che il giocatore si sceglie dal telefono. */
+  socket.on('giocatore:avatar', ({ url }, rispondi) => {
+    if (ruolo !== 'giocatore' || !stanzaCorrente) return rispondi?.({ errore: 'Non sei in partita' });
+    // Solo file serviti da noi: non vogliamo indirizzi esterni sul tabellone.
+    const pulito = String(url ?? '');
+    if (pulito && !pulito.startsWith('/media/')) return rispondi?.({ errore: 'Immagine non valida' });
+    stanzaCorrente.impostaAvatar(idGiocatore, pulito);
+    tocca();
+    rispondi?.({ ok: true });
+    trasmetti(stanzaCorrente);
+  });
+
   /** Il buzz. Unico momento in cui il tempo conta davvero. */
   socket.on('giocatore:prenota', (_dati, rispondi) => {
     if (ruolo !== 'giocatore' || !stanzaCorrente) return rispondi?.({ posizione: null });
@@ -314,6 +326,9 @@ io.on('connection', (socket) => {
       case 'moltiplicatore':   s.impostaMoltiplicatore(azione.idGiocatore, azione.valore); break;
       case 'rinomina':         s.rinomina(azione.idGiocatore, azione.nome); break;
       case 'rimuovi':          s.rimuoviGiocatore(azione.idGiocatore); break;
+      case 'avatar':           s.impostaAvatar(azione.idGiocatore, azione.url); break;
+      case 'turno':            s.passaTurno(azione.idGiocatore); break;
+      case 'ordine':           s.spostaInOrdine(azione.idGiocatore, Number(azione.delta ?? 1)); break;
       case 'azzera':           s.azzeraPunti(); break;
       default: return rispondi?.({ errore: 'Azione sconosciuta: ' + azione.tipo });
     }

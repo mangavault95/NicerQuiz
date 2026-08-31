@@ -158,7 +158,7 @@
     {
       "nome": "A scelta multipla",
       "tipo": "multipla",
-      "descrizione": "Quattro opzioni sul tabellone. Si risponde a voce dopo il buzz.",
+      "descrizione": "Si risponde a turno, in ordine. Chi sbaglia passa la mano al prossimo.",
       "punti": 15,
       "puntiErrore": 5,
       "secondi": 20,
@@ -174,8 +174,43 @@
           "corretta": 1,
           "risposta": "Venere",
           "note": "Un giorno su Venere dura piu' del suo anno."
+        },
+        {
+          "testo": "Quale di questi non e' un mare italiano?",
+          "opzioni": [
+            "Adriatico",
+            "Tirreno",
+            "Egeo",
+            "Ionio"
+          ],
+          "corretta": 2,
+          "risposta": "Il mar Egeo"
+        },
+        {
+          "testo": "Chi ha dipinto la Gioconda?",
+          "opzioni": [
+            "Raffaello",
+            "Leonardo",
+            "Caravaggio",
+            "Botticelli"
+          ],
+          "corretta": 1,
+          "risposta": "Leonardo da Vinci"
+        },
+        {
+          "testo": "Quante zampe ha un ragno?",
+          "opzioni": [
+            "Sei",
+            "Otto",
+            "Dieci",
+            "Dodici"
+          ],
+          "corretta": 1,
+          "risposta": "Otto"
         }
-      ]
+      ],
+      "risposte": "giro",
+      "rimbalzo": true
     },
     {
       "nome": "Il tabellone",

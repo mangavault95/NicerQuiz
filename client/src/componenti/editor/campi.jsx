@@ -46,6 +46,22 @@ export function Numero({ etichetta, aiuto, valore, onCambia, larghezza, ...resto
   );
 }
 
+export function Interruttore({ etichetta, aiuto, valore, onCambia, larghezza }) {
+  const stile = larghezza
+    ? { gridColumn: larghezza >= 4 ? '1 / -1' : `span ${larghezza}` }
+    : undefined;
+
+  return (
+    <label className="campo-editor interruttore" style={stile}>
+      <span className="riga-interruttore">
+        <input type="checkbox" checked={Boolean(valore)} onChange={(e) => onCambia(e.target.checked)} />
+        <span className="campo-etichetta">{etichetta}</span>
+      </span>
+      {aiuto && <span className="campo-aiuto">{aiuto}</span>}
+    </label>
+  );
+}
+
 export function Scelta({ etichetta, aiuto, valore, onCambia, opzioni, larghezza }) {
   return (
     <Campo etichetta={etichetta} aiuto={aiuto} larghezza={larghezza}>

@@ -10,7 +10,7 @@ Quattro schermi sulla stessa serata:
 | **Editor** `/editor` | tu, prima | costruisci round e domande, carichi foto e audio, provi gli effetti |
 | **Regia** `/regia` | il presentatore | domande in anticipo, risposte, note, chi ha prenotato e con che distacco, tutti i comandi, e una **mini-anteprima dal vivo** di quello che vedono i concorrenti |
 | **Tabellone** `/tabellone` | tutti | solo lo spettacolo. Mai la risposta prima del tempo |
-| **Telefono** `/gioca` | i giocatori | un pulsante grande per prenotarsi, il proprio punteggio |
+| **Telefono** `/gioca` | i giocatori | un pulsante grande per prenotarsi (o il cartello di chi ha la mano, nei round a turno), la propria foto e il proprio punteggio |
 
 Le risposte non escono mai dal server verso il tabellone o i telefoni finche'
 il presentatore non le rivela: non basta aprire gli strumenti per sviluppatori
@@ -50,8 +50,18 @@ Per controllare che le regole di gara tengano ancora, a server acceso:
 npm run prova
 ```
 
-Simula presentatore, tabellone e due giocatori e verifica punteggi, coda dei
-buzz, malus, jolly, tabellone a caselle e riconnessioni.
+Simula presentatore, tabellone e giocatori e verifica punteggi, coda dei buzz,
+turni e rimbalzi, malus, jolly, tabellone a caselle, foto dei partecipanti e
+riconnessioni.
+
+Per guardare il tabellone con qualcuno dentro senza aprire quattro finestre:
+
+```bash
+node server/finti-giocatori.mjs CODICE
+```
+
+Collega quattro partecipanti finti, tre con la foto, e li tiene lì finché non
+lo chiudi.
 
 ## Costruire un quiz
 
@@ -59,8 +69,8 @@ Dalla home, **Crea un quiz**. L'editor ha tre colonne di lavoro: l'elenco dei
 tuoi quiz, i round, e il round che stai scrivendo.
 
 - **Round**: nome, descrizione (compare sul tabellone prima che cominci), tipo,
-  punti, malus per errore, secondi di tempo, e ogni quanto la domanda si scopre
-  da sola.
+  **come si risponde** (al buzzer o a turno), punti, malus per errore, secondi
+  di tempo, e ogni quanto la domanda si scopre da sola.
 - **Domande**: si aggiungono, si riordinano, si duplicano. I campi cambiano da
   soli a seconda del tipo di round.
 - **Foto e audio**: si caricano dal computer con un pulsante. Finiscono in
@@ -92,6 +102,42 @@ rimpicciolito: si aggiorna a ogni comando, cosi' non devi girare la testa verso
 lo schermo grande per sapere a che punto e' la rivelazione. L'audio pero' li'
 non parte: in salotto deve suonare un altoparlante solo.
 
+## Al buzzer o a turno
+
+**Si sceglie round per round**, non una volta per tutta la serata: un round di
+domande secche al buzzer, il round di indovinelli a turno, e cosi' via.
+
+**Al buzzer** — chi prenota per primo risponde. Il tempo lo misura il server,
+non il telefono. Gli altri restano in coda: se il primo sbaglia, il turno passa
+subito al secondo senza riaprire niente.
+
+**A turno** — si risponde in ordine e **i buzzer restano spenti**: sul telefono
+il pulsante sparisce del tutto e al suo posto compare il cartello con il nome di
+chi ha la mano, cosi' nessuno preme un tasto che non conta. La mano passa al
+prossimo a ogni domanda. Con l'opzione **rimbalzo**, chi sbaglia la passa subito
+al giocatore successivo sulla stessa domanda.
+
+L'ordine del giro e' quello di arrivo, ma in regia si riordina con le frecce
+accanto a ogni giocatore, e con **passa la mano a** si puo' sempre correggere a
+chi tocca davvero.
+
+## Le icone dei partecipanti
+
+In fondo al tabellone c'e' una fila di icone: foto, nome e punteggio di ognuno.
+I punti si aggiornano da soli man mano che il gioco va avanti, e a ogni cambio
+lampeggia lo scarto (`+300`, `-10`) sopra il totale, cosi' si vede *quanto* ha
+preso senza dover leggere il numero grande.
+
+Le foto si caricano in due modi: **dal telefono**, toccando la propria icona in
+alto a sinistra, oppure **dalla regia**, cliccando il pallino accanto al nome
+(comodo per chi non ha voglia di cercarsi una foto a serata iniziata). Chi non
+ne mette una resta con le sue iniziali sul suo colore.
+
+Le icone stanno sempre nello stesso ordine, quello del giro: se si
+riordinassero per punteggio salterebbero da una parte all'altra a ogni risposta
+e non si capirebbe piu' chi e' chi. La classifica ordinata per punti c'e'
+comunque, sulla schermata dei punteggi.
+
 ### Scorciatoie da tastiera (in regia)
 
 | Tasto | Cosa fa |
@@ -100,8 +146,8 @@ non parte: in salotto deve suonare un altoparlante solo.
 | `→` | domanda successiva |
 | `↑` `↓` | scopri o ricopri un passo |
 | `P` | ferma o riavvia la rivelazione automatica |
-| `G` | il primo in coda ha risposto giusto |
-| `S` | il primo in coda ha sbagliato |
+| `G` | ha risposto giusto (il primo in coda, o chi ha la mano nei round a turno) |
+| `S` | ha sbagliato |
 
 ## I tipi di round
 
@@ -171,9 +217,19 @@ client/
   src/componenti/   i pezzi condivisi, editor compreso
 ```
 
+Il tabellone e' un *container* CSS: tutte le misure dentro sono in `cqw`/`cqh`,
+cioe' relative a se stesso e non alla finestra. E' quello che permette alla
+mini-anteprima in regia di essere lo stesso identico schermo, solo in scala, e
+al tabellone vero di restare leggibile sia su un televisore sia in una finestra
+schiacciata.
+
 Il tabellone e' un componente solo (`VistaTabellone`), usato sia dalla pagina
 `/tabellone` sia dall'anteprima in regia: e' il motivo per cui il presentatore
 puo' fidarsi del riquadro.
+
+Le foto dei partecipanti passano per lo stesso caricamento dei media del quiz, e
+il server accetta solo indirizzi che servono lui (`/media/...`): dal telefono di
+un giocatore non si puo' far comparire sul tabellone un'immagine presa altrove.
 
 ## Metterlo online
 
@@ -200,3 +256,5 @@ In casa, con `npm start`, questo problema non esiste.
 - Il riordino delle domande col trascinamento (per ora ci sono le frecce).
 - Chi sceglie la casella del tabellone e' sempre il presentatore, non il
   giocatore che ha appena segnato.
+- Le foto dei partecipanti non vengono ritagliate: si carica quello che si ha e
+  il tabellone le riempie in tondo. Se la faccia e' storta, va ritagliata prima.

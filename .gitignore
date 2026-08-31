@@ -1,3 +1,9 @@
 node_modules/
 dist/
 *.log
+
+# I media caricati dall'editor e dai telefoni sono roba vostra: restano sul
+# disco, non nel repository. Solo i file della demo vengono versionati.
+server/media/*
+!server/media/demo-*
+!server/media/crea-audio-demo.mjs

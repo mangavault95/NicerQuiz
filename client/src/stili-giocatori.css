@@ -1,0 +1,223 @@
+/* I partecipanti: le icone in fondo al tabellone, i turni, le foto.
+   Le misure sono in cqw/cqh perche' il tabellone e' un container: cosi' la
+   mini-anteprima in regia resta identica allo schermo grande, solo in scala. */
+
+/* ------------------------------------------- icone dei partecipanti */
+
+.pedine {
+  display: flex;
+  gap: clamp(8px, 1.4cqw, 20px);
+  justify-content: center;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.nessun-giocatore { text-align: center; }
+
+.pedina-giocatore {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: clamp(4px, .6cqw, 10px) clamp(6px, 1cqw, 16px);
+  border-radius: 14px;
+  background: var(--carta);
+  border-bottom: 3px solid var(--colore, var(--viola));
+  transition: transform .3s ease, box-shadow .3s ease, background .3s ease;
+}
+.pedina-giocatore.assente { opacity: .4; }
+.pedina-giocatore.evidenziata,
+.pedina-giocatore.di-turno {
+  transform: translateY(-8px);
+  background: var(--carta-2);
+  box-shadow: 0 0 0 2px var(--colore, var(--accento)), 0 10px 30px rgba(0, 0, 0, .45);
+}
+
+.pedina-icona {
+  position: relative;
+  width: clamp(38px, 5cqw, 84px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--fondo-2);
+  box-shadow: inset 0 0 0 2px var(--colore, var(--viola));
+  display: grid;
+  place-items: center;
+}
+.pedina-icona img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pedina-icona .iniziali {
+  font-weight: 900;
+  font-size: clamp(.85rem, 1.8cqw, 1.8rem);
+  color: var(--colore, var(--viola));
+  letter-spacing: .02em;
+}
+.pedina-icona .segno-jolly {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  background: var(--accento);
+  color: #1a1400;
+  font-size: clamp(.5rem, .8cqw, .8rem);
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 999px;
+}
+
+.pedina-giocatore .pedina-nome {
+  font-weight: 700;
+  font-size: clamp(.68rem, 1.1cqw, 1.1rem);
+  max-width: 12ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pedina-giocatore .pedina-punti {
+  position: relative;
+  font-weight: 900;
+  font-size: clamp(1rem, 1.9cqw, 2rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+}
+
+/* Lo scarto che sale e svanisce: si vede *quanto* ha preso, non solo il totale. */
+.pedina-punti .scarto {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  font-style: normal;
+  font-size: clamp(.7rem, 1.2cqw, 1.2rem);
+  font-weight: 800;
+  white-space: nowrap;
+  animation: sale 1.8s ease-out forwards;
+  pointer-events: none;
+}
+.pedina-punti .scarto.su { color: var(--giusto); }
+.pedina-punti .scarto.giu { color: var(--sbagliato); }
+
+@keyframes sale {
+  0% { opacity: 0; transform: translate(-50%, 6px); }
+  18% { opacity: 1; transform: translate(-50%, -2px); }
+  70% { opacity: 1; transform: translate(-50%, -10px); }
+  100% { opacity: 0; transform: translate(-50%, -22px); }
+}
+
+/* ----------------------------------------------------- turni sul tabellone */
+
+.fascia-turno {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 16px;
+  background: var(--colore, var(--viola));
+  color: #0b0a14;
+  border-radius: 16px;
+  padding: .45em 1.4em;
+  animation: entra .25s ease both;
+}
+.fascia-turno .etichetta {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .22em;
+  opacity: .7;
+}
+.fascia-turno strong { font-size: clamp(1.3rem, 3.2cqw, 2.4rem); font-weight: 900; }
+.fascia-turno .nota-turno { font-size: .82rem; opacity: .7; }
+
+/* ------------------------------------------------- il turno sul telefono */
+
+.turno-cartello {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  text-align: center;
+  padding: 32px 24px;
+  border-radius: 24px;
+  background: var(--carta);
+  border: 2px solid var(--bordo);
+  width: min(84vw, 380px);
+}
+.turno-cartello.mio {
+  background: radial-gradient(circle at 50% 20%, #a6ffd4, var(--giusto) 75%);
+  border-color: transparent;
+  color: #06301f;
+}
+.turno-titolo {
+  font-size: .8rem;
+  text-transform: uppercase;
+  letter-spacing: .22em;
+  opacity: .75;
+}
+.turno-cartello .turno-nome { font-size: clamp(1.8rem, 9vw, 2.8rem); font-weight: 900; }
+.turno-cartello.mio .turno-titolo { font-size: clamp(1.6rem, 8vw, 2.4rem); letter-spacing: .04em; opacity: 1; font-weight: 900; }
+.turno-cartello p { margin: 0; opacity: .8; }
+
+/* --------------------------------------------------- foto sul telefono */
+
+.giocatore-identita {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+}
+.mia-foto {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--fondo-2);
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 2px var(--colore, var(--viola));
+}
+.mia-foto img { width: 100%; height: 100%; object-fit: cover; }
+.mia-foto .cambia-foto {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  font-size: .7rem;
+  background: var(--carta-2);
+  border-radius: 999px;
+  padding: 1px 3px;
+}
+
+/* ------------------------------------------------------- foto in regia */
+
+.foto-di-gioco {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  overflow: hidden;
+  padding: 0;
+  border: none;
+  background: var(--fondo-2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 2px var(--colore, var(--viola));
+}
+.foto-di-gioco img { width: 100%; height: 100%; object-fit: cover; }
+.foto-di-gioco .caricamento {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, .55);
+}
+
+.controllo-giocatore.di-turno { box-shadow: inset 3px 0 0 var(--accento); }
+.controllo-nome { gap: 8px; }
+.ordine-giro { margin-left: auto; display: flex; gap: 1px; }
+
+.passa-turno { display: grid; gap: 6px; margin-top: 10px; }
+
+/* -------------------------------------------------- interruttore editor */
+
+.interruttore .riga-interruttore { display: flex; align-items: center; gap: 8px; }
+.interruttore input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--viola); }

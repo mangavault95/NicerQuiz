@@ -1,9 +1,15 @@
-import { useEffect, useState } from 'react';
-import { chiedi, identitaGiocatore, ricorda, ricordato, useCollegato, useStato } from '../rete.js';
+import { useEffect, useRef, useState } from 'react';
+import {
+  caricaMedia, chiedi, identitaGiocatore, ricorda, ricordato,
+  urlMedia, useCollegato, useStato,
+} from '../rete.js';
 
 /**
  * Il telefono del giocatore: un pulsante grande e poco altro.
  * Il tabellone resta l'unico posto dove si guarda la domanda.
+ *
+ * Nei round a turno il buzzer sparisce del tutto: al suo posto c'e' il cartello
+ * che dice a chi tocca, cosi' nessuno preme un pulsante che non conta.
  */
 export default function Giocatore({ codiceIniziale }) {
   const stato = useStato();
@@ -33,10 +39,13 @@ export default function Giocatore({ codiceIniziale }) {
   const miaPrenotazione = stato.prenotazioni.findIndex((p) => p.idGiocatore === mioId);
   const primo = stato.prenotazioni[0] ?? null;
 
+  const aGiro = stato.modoRisposte === 'giro';
+  const mioTurno = aGiro && stato.turno?.id === mioId;
+
   // Ci si puo' mettere in coda anche mentre risponde un altro: se sbaglia,
   // il turno passa senza tempi morti.
   const inGioco = stato.fase === 'aperta' || stato.fase === 'prenotato';
-  const puoPrenotare = inGioco && !bloccato && miaPrenotazione < 0;
+  const puoPrenotare = !aGiro && inGioco && !bloccato && miaPrenotazione < 0;
 
   async function prenota() {
     if (!puoPrenotare) return;
@@ -47,10 +56,7 @@ export default function Giocatore({ codiceIniziale }) {
   return (
     <div className="giocatore" style={{ '--colore': me?.colore ?? '#5c9dff' }}>
       <header className="giocatore-testata">
-        <div className="giocatore-identita">
-          <span className="pallino" />
-          <strong>{me?.nome ?? nome}</strong>
-        </div>
+        <FotoGiocatore me={me} nome={nome} />
         <div className="giocatore-punti">
           <strong>{me?.punti ?? 0}</strong>
           <span>{posizione > 0 ? posizione + '°' : ''}</span>
@@ -58,24 +64,34 @@ export default function Giocatore({ codiceIniziale }) {
       </header>
 
       <main className="giocatore-centro">
-        <button
-          className={
-            'buzzer' +
-            (puoPrenotare ? ' attivo' : '') +
-            (miaPrenotazione === 0 ? ' primo' : '') +
-            (bloccato ? ' bloccato' : '')
-          }
-          onPointerDown={prenota}
-          disabled={!puoPrenotare}
-        >
-          <span className="buzzer-etichetta">{etichettaBuzzer(stato, mioId, miaPrenotazione, bloccato)}</span>
-        </button>
+        {aGiro ? (
+          <CartelloTurno stato={stato} mioTurno={mioTurno} />
+        ) : (
+          <button
+            className={
+              'buzzer' +
+              (puoPrenotare ? ' attivo' : '') +
+              (miaPrenotazione === 0 ? ' primo' : '') +
+              (bloccato ? ' bloccato' : '')
+            }
+            onPointerDown={prenota}
+            disabled={!puoPrenotare}
+          >
+            <span className="buzzer-etichetta">
+              {etichettaBuzzer(stato, miaPrenotazione, bloccato)}
+            </span>
+          </button>
+        )}
       </main>
 
       <footer className="giocatore-piede">
-        <p className="giocatore-messaggio">{messaggio(stato, mioId, miaPrenotazione, bloccato, primo)}</p>
+        <p className="giocatore-messaggio">
+          {messaggio(stato, miaPrenotazione, bloccato, primo, aGiro, mioTurno)}
+        </p>
         {me?.moltiplicatore > 1 && (
-          <p className="giocatore-jolly">Jolly attivo: la prossima risposta esatta vale x{me.moltiplicatore}</p>
+          <p className="giocatore-jolly">
+            Jolly attivo: la prossima risposta esatta vale x{me.moltiplicatore}
+          </p>
         )}
         {!collegato && <p className="avviso-errore">Connessione persa, sto riprovando…</p>}
       </footer>
@@ -83,7 +99,58 @@ export default function Giocatore({ codiceIniziale }) {
   );
 }
 
-function etichettaBuzzer(stato, mioId, miaPrenotazione, bloccato) {
+// ------------------------------------------------------------------- pezzi
+
+/** La foto la sceglie il giocatore stesso: e' la sua faccia sul tabellone. */
+function FotoGiocatore({ me, nome }) {
+  const fileRef = useRef(null);
+  const [inCorso, setInCorso] = useState(false);
+
+  async function scegli(evento) {
+    const file = evento.target.files?.[0];
+    evento.target.value = '';
+    if (!file) return;
+
+    setInCorso(true);
+    const risposta = await caricaMedia(file);
+    setInCorso(false);
+    if (risposta.url) await chiedi('giocatore:avatar', { url: risposta.url });
+  }
+
+  return (
+    <button className="giocatore-identita" onClick={() => fileRef.current?.click()}>
+      <span className="mia-foto">
+        {me?.avatar
+          ? <img src={urlMedia(me.avatar)} alt="" />
+          : <span className="pallino" />}
+        <span className="cambia-foto">{inCorso ? '…' : '📷'}</span>
+      </span>
+      <strong>{me?.nome ?? nome}</strong>
+      <input ref={fileRef} type="file" accept="image/*" hidden onChange={scegli} />
+    </button>
+  );
+}
+
+function CartelloTurno({ stato, mioTurno }) {
+  if (!stato.turno) {
+    return (
+      <div className="turno-cartello">
+        <span className="turno-titolo">Si gioca a turno</span>
+        <p>Il presentatore sta per dire a chi tocca.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={'turno-cartello' + (mioTurno ? ' mio' : '')} style={{ '--colore': stato.turno.colore }}>
+      <span className="turno-titolo">{mioTurno ? 'Tocca a te' : 'Tocca a'}</span>
+      {!mioTurno && <strong className="turno-nome">{stato.turno.nome}</strong>}
+      <p>{mioTurno ? 'Rispondi a voce.' : 'Aspetta il tuo giro.'}</p>
+    </div>
+  );
+}
+
+function etichettaBuzzer(stato, miaPrenotazione, bloccato) {
   if (bloccato) return 'Fuori da questa domanda';
   if (miaPrenotazione === 0) return 'Tocca a te!';
   if (miaPrenotazione > 0) return (miaPrenotazione + 1) + '° in coda';
@@ -91,12 +158,23 @@ function etichettaBuzzer(stato, mioId, miaPrenotazione, bloccato) {
   return 'Aspetta…';
 }
 
-function messaggio(stato, mioId, miaPrenotazione, bloccato, primo) {
+function messaggio(stato, miaPrenotazione, bloccato, primo, aGiro, mioTurno) {
+  if (stato.fase === 'rivelata') {
+    return stato.contenuto?.risposta ? 'Risposta: ' + stato.contenuto.risposta : 'Risposta svelata.';
+  }
+  if (stato.fase === 'classifica') return 'Guarda il tabellone per i punteggi.';
+  if (stato.fase === 'attesa') {
+    return stato.round ? 'Round: ' + stato.round.nome : 'La partita sta per cominciare.';
+  }
+  if (stato.fase === 'preparata') return 'Il presentatore sta leggendo. Occhio al tabellone.';
+
+  if (aGiro) {
+    if (stato.fase === 'chiusa') return 'Domanda chiusa.';
+    if (mioTurno) return 'Vale ' + stato.punti + ' punti.';
+    return stato.rimbalzo ? 'Se sbaglia, potrebbe rimbalzare a te.' : 'Non tocca a te, questa.';
+  }
+
   switch (stato.fase) {
-    case 'attesa':
-      return stato.round ? 'Round: ' + stato.round.nome : 'La partita sta per cominciare.';
-    case 'preparata':
-      return 'Il presentatore sta leggendo. Occhio al tabellone.';
     case 'aperta':
       if (bloccato) return "Hai gia' risposto a questa domanda.";
       return 'Domanda aperta: vale ' + stato.punti + ' punti.';
@@ -105,10 +183,6 @@ function messaggio(stato, mioId, miaPrenotazione, bloccato, primo) {
       return (primo?.nome ?? 'Qualcuno') + ' ha prenotato per primo.';
     case 'chiusa':
       return 'Domanda chiusa.';
-    case 'rivelata':
-      return stato.contenuto?.risposta ? 'Risposta: ' + stato.contenuto.risposta : 'Risposta svelata.';
-    case 'classifica':
-      return 'Guarda il tabellone per i punteggi.';
     default:
       return '';
   }

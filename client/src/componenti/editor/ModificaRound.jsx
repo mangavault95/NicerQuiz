@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import ModificaDomanda from './ModificaDomanda.jsx';
-import { Area, ComandiElemento, Numero, Scelta, Testo } from './campi.jsx';
+import { Area, ComandiElemento, Interruttore, Numero, Scelta, Testo } from './campi.jsx';
 
 const TIPI = [
   { valore: 'secca', nome: 'Domande secche' },
@@ -44,6 +44,27 @@ export default function ModificaRound({ round, onCambia }) {
           larghezza={4}
           placeholder="Compare sul tabellone prima che il round cominci"
         />
+
+        <Scelta
+          etichetta="Come si risponde"
+          valore={round.risposte ?? 'buzzer'}
+          onCambia={(v) => cambia({ risposte: v === 'buzzer' ? undefined : v })}
+          opzioni={[
+            { valore: 'buzzer', nome: 'Al buzzer: chi prenota per primo' },
+            { valore: 'giro', nome: 'A turno: si risponde in ordine' },
+          ]}
+          larghezza={2}
+        />
+
+        {round.risposte === 'giro' && (
+          <Interruttore
+            etichetta="Rimbalzo"
+            valore={round.rimbalzo}
+            onCambia={(v) => cambia({ rimbalzo: v || undefined })}
+            aiuto="Se chi ha la mano sbaglia, la domanda passa al prossimo del giro"
+            larghezza={2}
+          />
+        )}
 
         {round.tipo !== 'tabellone' && (
           <>

@@ -30,6 +30,11 @@ export class Stanza {
     this.passo = 0;
 
     this.caselleUsate = new Set();     // caselle del tabellone gia' giocate
+
+    this.ordine = [];                  // idGiocatore nell'ordine di turno
+    this.indiceTurno = 0;              // a chi tocca la prossima domanda
+    this.turnoDomanda = null;          // chi e' sulla graticola adesso
+
     this.prenotazioni = [];            // [{ idGiocatore, ms }] in ordine di arrivo
     this.bloccati = new Set();         // chi ha gia' sbagliato su questa domanda
     this.apertaDa = null;
@@ -65,6 +70,19 @@ export class Stanza {
     return this.round?.tipo === 'tabellone';
   }
 
+  /**
+   * Come si risponde in questo round.
+   *   'buzzer' — chi prenota per primo (il valore di sempre)
+   *   'giro'   — si risponde a turno, in ordine, e i buzzer restano spenti
+   */
+  get modoRisposte() {
+    return this.round?.risposte === 'giro' ? 'giro' : 'buzzer';
+  }
+
+  get aGiro() {
+    return this.modoRisposte === 'giro';
+  }
+
   get passiTotali() {
     if (!this.domanda) return 0;
     return passiTotali(this.domanda, this.round);
@@ -95,10 +113,26 @@ export class Stanza {
       connesso: true,
       socketId,
       moltiplicatore: 1,               // jolly per la prossima risposta esatta
+      avatar: null,                    // foto sul tabellone, se ne carica una
     };
     this.giocatori.set(idGiocatore, scheda);
+    this.ordine.push(idGiocatore);     // in coda al giro, chi arriva dopo gioca dopo
     this.annota(scheda.nome + " e' entrato");
     return scheda;
+  }
+
+  impostaAvatar(idGiocatore, url) {
+    const g = this.giocatori.get(idGiocatore);
+    if (!g) return;
+    g.avatar = url || null;
+  }
+
+  /** Sposta un giocatore nel giro. Serve a decidere chi comincia. */
+  spostaInOrdine(idGiocatore, delta) {
+    const i = this.ordine.indexOf(idGiocatore);
+    const j = i + delta;
+    if (i < 0 || j < 0 || j >= this.ordine.length) return;
+    [this.ordine[i], this.ordine[j]] = [this.ordine[j], this.ordine[i]];
   }
 
   disconnetti(socketId) {
@@ -113,6 +147,9 @@ export class Stanza {
     const g = this.giocatori.get(idGiocatore);
     if (!g) return;
     this.giocatori.delete(idGiocatore);
+    this.ordine = this.ordine.filter((id) => id !== idGiocatore);
+    this.indiceTurno = this.ordine.length ? this.indiceTurno % this.ordine.length : 0;
+    if (this.turnoDomanda === idGiocatore) this.turnoDomanda = null;
     this.prenotazioni = this.prenotazioni.filter((p) => p.idGiocatore !== idGiocatore);
     this.bloccati.delete(idGiocatore);
     this.annota(g.nome + ' rimosso dalla partita');
@@ -132,6 +169,8 @@ export class Stanza {
     this.indiceDomanda = -1;
     this.caselleUsate = new Set();
     this.pulisciDomanda();
+    this.turnoDomanda = null;
+    this.assegnaTurno();
     this.fase = 'attesa';
     this.annota('Round ' + (indice + 1) + ': ' + (this.round.nome ?? this.round.tipo));
   }
@@ -141,7 +180,45 @@ export class Stanza {
     this.fermaTimer();
     this.indiceDomanda = indice;
     this.pulisciDomanda();
+    this.assegnaTurno();
     this.fase = 'preparata';
+  }
+
+  // ---------------------------------------------------------------- il giro
+
+  /** Chi risponde a questa domanda, quando si gioca a turno. */
+  assegnaTurno() {
+    if (!this.aGiro || this.ordine.length === 0) {
+      this.turnoDomanda = null;
+      return;
+    }
+    this.indiceTurno = this.indiceTurno % this.ordine.length;
+    this.turnoDomanda = this.ordine[this.indiceTurno];
+  }
+
+  /** Passa la mano al prossimo, saltando chi ha gia' sbagliato qui. */
+  prossimoDiTurno() {
+    if (this.ordine.length === 0) return null;
+    const partenza = this.ordine.indexOf(this.turnoDomanda);
+    for (let salto = 1; salto <= this.ordine.length; salto++) {
+      const candidato = this.ordine[(partenza + salto) % this.ordine.length];
+      if (!this.bloccati.has(candidato)) return candidato;
+    }
+    return null;
+  }
+
+  /** Il presentatore puo' sempre dire a chi tocca davvero. */
+  passaTurno(idGiocatore) {
+    const i = this.ordine.indexOf(idGiocatore);
+    if (i < 0) return;
+    this.indiceTurno = i;
+    this.turnoDomanda = idGiocatore;
+    this.annota('Tocca a ' + (this.giocatori.get(idGiocatore)?.nome ?? '?'));
+  }
+
+  avanzaGiro() {
+    if (this.ordine.length === 0) return;
+    this.indiceTurno = (this.indiceTurno + 1) % this.ordine.length;
   }
 
   /** Apre la domanda al pubblico: da qui in poi i buzzer sono vivi. */
@@ -224,13 +301,19 @@ export class Stanza {
     // Nel tabellone non c'e' un ordine: finita una casella si torna alla
     // griglia e la si sceglie di nuovo, finche' non e' vuota.
     if (this.suTabellone) {
-      if (this.indiceDomanda >= 0) this.caselleUsate.add(this.indiceDomanda);
+      if (this.indiceDomanda >= 0) {
+        this.caselleUsate.add(this.indiceDomanda);
+        this.avanzaGiro();
+      }
       this.fermaTimer();
       this.indiceDomanda = -1;
       this.pulisciDomanda();
+      this.assegnaTurno();
       this.fase = this.caselleUsate.size >= quante ? 'classifica' : 'attesa';
       return;
     }
+
+    if (this.indiceDomanda >= 0) this.avanzaGiro();
 
     if (this.indiceDomanda + 1 < quante) {
       this.caricaDomanda(this.indiceDomanda + 1);
@@ -250,6 +333,8 @@ export class Stanza {
    * non e' valido (domanda chiusa, giocatore gia' bloccato, doppio buzz).
    */
   prenota(idGiocatore) {
+    // Nei round a turno i buzzer restano spenti: si risponde in ordine.
+    if (this.aGiro) return null;
     // La coda resta aperta anche dopo il primo buzz: se chi ha prenotato
     // sbaglia, il presentatore passa subito al successivo senza riaprire.
     if (this.fase !== 'aperta' && this.fase !== 'prenotato') return null;
@@ -302,6 +387,21 @@ export class Stanza {
     // Chi sbaglia esce da questa domanda, gli altri possono ancora provarci.
     this.bloccati.add(idGiocatore);
     this.prenotazioni = this.prenotazioni.filter((p) => p.idGiocatore !== idGiocatore);
+
+    // A turno la domanda non si riapre a tutti: o rimbalza al prossimo del
+    // giro, o si chiude li'.
+    if (this.aGiro) {
+      const prossimo = this.round?.rimbalzo ? this.prossimoDiTurno() : null;
+      if (prossimo) {
+        this.turnoDomanda = prossimo;
+        this.annota('Rimbalza a ' + (this.giocatori.get(prossimo)?.nome ?? '?'));
+        this.fase = 'aperta';
+      } else {
+        this.fase = 'chiusa';
+        this.fermaTimer();
+      }
+      return;
+    }
 
     const restaQualcuno = [...this.giocatori.keys()].some((id) => !this.bloccati.has(id));
     if (this.prenotazioni.length > 0) {
@@ -389,17 +489,32 @@ export class Stanza {
 
   // ------------------------------------------------------- viste dello stato
 
+  scheda(g) {
+    return {
+      id: g.id,
+      nome: g.nome,
+      punti: g.punti,
+      colore: g.colore,
+      connesso: g.connesso,
+      moltiplicatore: g.moltiplicatore,
+      avatar: g.avatar ?? null,
+    };
+  }
+
   classifica() {
-    return [...this.giocatori.values()]
-      .map((g) => ({
-        id: g.id,
-        nome: g.nome,
-        punti: g.punti,
-        colore: g.colore,
-        connesso: g.connesso,
-        moltiplicatore: g.moltiplicatore,
-      }))
-      .sort((a, b) => b.punti - a.punti);
+    return [...this.giocatori.values()].map((g) => this.scheda(g)).sort((a, b) => b.punti - a.punti);
+  }
+
+  /**
+   * Gli stessi giocatori, ma nell'ordine del giro.
+   * Le icone sul tabellone usano questo: se si riordinassero per punteggio
+   * salterebbero da una parte all'altra a ogni risposta.
+   */
+  inOrdine() {
+    return this.ordine
+      .map((id) => this.giocatori.get(id))
+      .filter(Boolean)
+      .map((g) => this.scheda(g));
   }
 
   /** Cosa possono vedere tabellone e telefoni: mai la risposta, mai le note. */
@@ -496,6 +611,16 @@ export class Stanza {
       griglia: this.grigliaPubblica(),
       punti: this.puntiOra,
       giocatori: this.classifica(),
+      giocatoriInOrdine: this.inOrdine(),
+      modoRisposte: this.modoRisposte,
+      rimbalzo: Boolean(this.round?.rimbalzo),
+      turno: this.turnoDomanda
+        ? {
+            id: this.turnoDomanda,
+            nome: this.giocatori.get(this.turnoDomanda)?.nome ?? '?',
+            colore: this.giocatori.get(this.turnoDomanda)?.colore ?? '#888888',
+          }
+        : null,
       prenotazioni: this.prenotazioni.map((p) => ({
         idGiocatore: p.idGiocatore,
         ms: p.ms,
