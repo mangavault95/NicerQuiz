@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  caricaMedia, chiedi, identitaGiocatore, ricorda, ricordato,
+  chiedi, identitaGiocatore, ricorda, ricordato,
   urlMedia, useCollegato, useStato,
 } from '../rete.js';
 
@@ -101,33 +101,20 @@ export default function Giocatore({ codiceIniziale }) {
 
 // ------------------------------------------------------------------- pezzi
 
-/** La foto la sceglie il giocatore stesso: e' la sua faccia sul tabellone. */
+/**
+ * Nome e faccia. La foto la decide il conduttore dalla regia: dal telefono si
+ * vede e basta, cosi' nessuno se la cambia a meta' partita.
+ */
 function FotoGiocatore({ me, nome }) {
-  const fileRef = useRef(null);
-  const [inCorso, setInCorso] = useState(false);
-
-  async function scegli(evento) {
-    const file = evento.target.files?.[0];
-    evento.target.value = '';
-    if (!file) return;
-
-    setInCorso(true);
-    const risposta = await caricaMedia(file);
-    setInCorso(false);
-    if (risposta.url) await chiedi('giocatore:avatar', { url: risposta.url });
-  }
-
   return (
-    <button className="giocatore-identita" onClick={() => fileRef.current?.click()}>
+    <div className="giocatore-identita">
       <span className="mia-foto">
         {me?.avatar
           ? <img src={urlMedia(me.avatar)} alt="" />
           : <span className="pallino" />}
-        <span className="cambia-foto">{inCorso ? '…' : '📷'}</span>
       </span>
       <strong>{me?.nome ?? nome}</strong>
-      <input ref={fileRef} type="file" accept="image/*" hidden onChange={scegli} />
-    </button>
+    </div>
   );
 }
 

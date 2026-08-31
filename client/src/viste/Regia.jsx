@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { caricaMedia, chiedi, urlMedia, useCollegato, useStato } from '../rete.js';
+import { URL_SERVER, caricaMedia, chiedi, urlMedia, useCollegato, useStato } from '../rete.js';
 import RivelatoreImmagine from '../componenti/RivelatoreImmagine.jsx';
 import Classifica from '../componenti/Classifica.jsx';
 import Cronometro from '../componenti/Cronometro.jsx';
@@ -434,7 +434,7 @@ function PannelloGiocatori({ stato, azione }) {
             style={{ '--colore': g.colore }}
           >
             <div className="controllo-nome">
-              <FotoDiGioco giocatore={g} azione={azione} />
+              <SceltaFoto giocatore={g} azione={azione} />
               <strong>{g.nome}</strong>
               {!g.connesso && <em>offline</em>}
               <span className="ordine-giro">
@@ -515,35 +515,91 @@ function PannelloGiocatori({ stato, azione }) {
 }
 
 /**
- * La foto del giocatore, caricabile anche dalla regia: non tutti si mettono
- * a cercarsi una foto dal telefono a serata iniziata.
+ * La faccia di un partecipante sul tabellone: la decide il conduttore.
+ *
+ * Si carica dal computer sul momento, oppure si ripesca fra le immagini gia'
+ * caricate — cosi' le facce si preparano con calma prima della serata, dalla
+ * libreria dell'editor, e qui si tratta solo di assegnarle.
  */
-function FotoDiGioco({ giocatore, azione }) {
+function SceltaFoto({ giocatore, azione }) {
   const fileRef = useRef(null);
+  const [aperto, setAperto] = useState(false);
+  const [libreria, setLibreria] = useState([]);
   const [inCorso, setInCorso] = useState(false);
+  const [errore, setErrore] = useState(null);
 
-  async function scegli(evento) {
+  useEffect(() => {
+    if (!aperto) return;
+    fetch(URL_SERVER + '/api/media')
+      .then((r) => r.json())
+      .then((elenco) => setLibreria(elenco.filter((m) => m.tipo === 'immagine')))
+      .catch(() => setLibreria([]));
+  }, [aperto]);
+
+  function assegna(url) {
+    azione('avatar', { idGiocatore: giocatore.id, url });
+    setAperto(false);
+  }
+
+  async function carica(evento) {
     const file = evento.target.files?.[0];
     evento.target.value = '';
     if (!file) return;
+
     setInCorso(true);
+    setErrore(null);
     const risposta = await caricaMedia(file);
     setInCorso(false);
-    if (risposta.url) azione('avatar', { idGiocatore: giocatore.id, url: risposta.url });
+
+    if (risposta.errore) setErrore(risposta.errore);
+    else assegna(risposta.url);
   }
 
   return (
-    <button
-      className="foto-di-gioco"
-      title={giocatore.avatar ? 'cambia la foto' : 'metti una foto'}
-      onClick={() => fileRef.current?.click()}
-    >
-      {giocatore.avatar
-        ? <img src={urlMedia(giocatore.avatar)} alt="" />
-        : <span className="pallino" />}
-      {inCorso && <span className="caricamento">…</span>}
-      <input ref={fileRef} type="file" accept="image/*" hidden onChange={scegli} />
-    </button>
+    <>
+      <button
+        className={'foto-di-gioco' + (aperto ? ' aperta' : '')}
+        title={giocatore.avatar ? 'cambia la foto' : 'metti una foto'}
+        onClick={() => setAperto((v) => !v)}
+      >
+        {giocatore.avatar
+          ? <img src={urlMedia(giocatore.avatar)} alt="" />
+          : <span className="pallino" />}
+        {inCorso && <span className="caricamento">…</span>}
+      </button>
+
+      {aperto && (
+        <div className="scelta-foto">
+          <div className="comandi-media">
+            <button className="bottone minuscolo" onClick={() => fileRef.current?.click()} disabled={inCorso}>
+              {inCorso ? 'carico…' : 'carica'}
+            </button>
+            {giocatore.avatar && (
+              <button className="bottone minuscolo fantasma" onClick={() => assegna('')}>togli</button>
+            )}
+            <button className="bottone minuscolo fantasma" onClick={() => setAperto(false)}>chiudi</button>
+          </div>
+
+          {errore && <p className="avviso-errore">{errore}</p>}
+
+          <div className="libreria-facce">
+            {libreria.length === 0 && <p className="vuoto">Nessuna immagine caricata.</p>}
+            {libreria.map((m) => (
+              <button
+                key={m.file}
+                className={'faccia' + (m.url === giocatore.avatar ? ' scelta' : '')}
+                title={m.file}
+                onClick={() => assegna(m.url)}
+              >
+                <img src={urlMedia(m.url)} alt="" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <input ref={fileRef} type="file" accept="image/*" hidden onChange={carica} />
+    </>
   );
 }
 

@@ -1,26 +1,25 @@
-// Tiene collegati alcuni giocatori finti a una stanza, cosi' si puo'
-// guardare il tabellone con le icone al loro posto.
+// Tiene collegati alcuni giocatori finti a una stanza, cosi' si puo' guardare
+// il tabellone con qualcuno dentro senza aprire quattro finestre.
+// Le facce non le mette questo script: le assegna il conduttore dalla regia.
 //   node finti-giocatori.mjs CODICE
 import { io } from 'socket.io-client';
 
-const INDIRIZZO = 'http://localhost:3001';
+const INDIRIZZO = process.env.URL || 'http://localhost:3001';
 const codice = process.argv[2];
 
-const gente = [
-  { nome: 'Carmine', id: 'finto-1', avatar: '/media/demo-torre.svg' },
-  { nome: 'Giulia', id: 'finto-2', avatar: '/media/demo-banana.svg' },
-  { nome: 'Marco', id: 'finto-3', avatar: '/media/demo-pacman.svg' },
-  { nome: 'Sara', id: 'finto-4', avatar: null },
-];
+if (!codice) {
+  console.error('Serve il codice della stanza: node finti-giocatori.mjs ABCD');
+  process.exit(1);
+}
 
+const gente = ['Carmine', 'Giulia', 'Marco', 'Sara'];
 const chiedi = (presa, evento, dati) => new Promise((r) => presa.emit(evento, dati, r));
 
-for (const persona of gente) {
+for (const [i, nome] of gente.entries()) {
   const presa = io(INDIRIZZO, { transports: ['websocket'] });
   await new Promise((r) => presa.on('connect', r));
-  await chiedi(presa, 'giocatore:entra', { codice, nome: persona.nome, id: persona.id });
-  if (persona.avatar) await chiedi(presa, 'giocatore:avatar', { url: persona.avatar });
-  console.log(persona.nome, 'dentro');
+  const risposta = await chiedi(presa, 'giocatore:entra', { codice, nome, id: 'finto-' + (i + 1) });
+  console.log(risposta.errore ? nome + ': ' + risposta.errore : nome + ' dentro');
 }
 
 console.log('Restano collegati. Ctrl+C per chiudere.');

@@ -121,10 +121,17 @@ export class Stanza {
     return scheda;
   }
 
+  /**
+   * La foto di un partecipante. La decide il presentatore: e' lui che sa quali
+   * facce stanno bene sul tabellone, e nessuno se la cambia a meta' partita.
+   * Passare una stringa vuota la toglie.
+   */
   impostaAvatar(idGiocatore, url) {
     const g = this.giocatori.get(idGiocatore);
     if (!g) return;
-    g.avatar = url || null;
+    // Solo file serviti da noi: niente indirizzi esterni sul tabellone.
+    const pulito = String(url ?? '');
+    g.avatar = pulito.startsWith('/media/') ? pulito : null;
   }
 
   /** Sposta un giocatore nel giro. Serve a decidere chi comincia. */

@@ -281,18 +281,6 @@ io.on('connection', (socket) => {
     trasmetti(stanza);
   });
 
-  /** La foto che il giocatore si sceglie dal telefono. */
-  socket.on('giocatore:avatar', ({ url }, rispondi) => {
-    if (ruolo !== 'giocatore' || !stanzaCorrente) return rispondi?.({ errore: 'Non sei in partita' });
-    // Solo file serviti da noi: non vogliamo indirizzi esterni sul tabellone.
-    const pulito = String(url ?? '');
-    if (pulito && !pulito.startsWith('/media/')) return rispondi?.({ errore: 'Immagine non valida' });
-    stanzaCorrente.impostaAvatar(idGiocatore, pulito);
-    tocca();
-    rispondi?.({ ok: true });
-    trasmetti(stanzaCorrente);
-  });
-
   /** Il buzz. Unico momento in cui il tempo conta davvero. */
   socket.on('giocatore:prenota', (_dati, rispondi) => {
     if (ruolo !== 'giocatore' || !stanzaCorrente) return rispondi?.({ posizione: null });

@@ -299,7 +299,7 @@ const riordinato = await attendiStato(schermoGiro,
 verifica('il giro si puo\' riordinare',
   riordinato.giocatoriInOrdine.map((g) => g.nome).join(',') === 'Carla,Elena,Dario');
 
-// --- Le foto dei partecipanti ----------------------------------------------
+// --- Le foto dei partecipanti, che decide il conduttore ---------------------
 const puntino = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAF0lEQVQIW2P8z8Dwn4EIwDiqkL4hBQCxlwX9K5mCzwAAAABJRU5ErkJggg==';
 const caricata = await fetch(INDIRIZZO + '/api/media', {
   method: 'POST',
@@ -308,16 +308,32 @@ const caricata = await fetch(INDIRIZZO + '/api/media', {
 }).then((r) => r.json());
 verifica('la foto del partecipante si carica', Boolean(caricata.url), JSON.stringify(caricata));
 
-await chiedi(carla, 'giocatore:avatar', { url: caricata.url });
+await azioneGiro({ tipo: 'avatar', idGiocatore: 'carla', url: caricata.url });
 const conFoto = await attendiStato(schermoGiro, (s) => trovaIn(s, 'Carla').avatar, 'foto di Carla');
-verifica('la foto arriva sul tabellone', trovaIn(conFoto, 'Carla').avatar === caricata.url, String(trovaIn(conFoto, 'Carla').avatar));
+verifica('la foto messa dal conduttore arriva sul tabellone',
+  trovaIn(conFoto, 'Carla').avatar === caricata.url, String(trovaIn(conFoto, 'Carla').avatar));
 
-const fotoFinta = await chiedi(dario, 'giocatore:avatar', { url: 'https://sito-esterno.example/foto.png' });
-verifica('un indirizzo esterno viene rifiutato', fotoFinta.errore === 'Immagine non valida', JSON.stringify(fotoFinta));
+// Il telefono non ha piu' voce in capitolo sulla propria faccia: l'evento non
+// esiste piu' lato server, quindi si spara e si controlla che non sia successo
+// niente (usiamo un'azione di regia per farci mandare uno stato fresco).
+carla.emit('giocatore:avatar', { url: '/media/demo-banana.svg' });
+await attendi(300);
+await azioneGiro({ tipo: 'turno', idGiocatore: 'carla' });
+const dopoTentativo = await attendiStato(schermoGiro, (s) => s.turno?.id === 'carla', 'stato dopo il tentativo');
+verifica('dal telefono non si puo\' cambiare la propria foto',
+  trovaIn(dopoTentativo, 'Carla').avatar === caricata.url,
+  String(trovaIn(dopoTentativo, 'Carla').avatar));
 
-await azioneGiro({ tipo: 'avatar', idGiocatore: 'dario', url: caricata.url });
-const fotoDaRegia = await attendiStato(schermoGiro, (s) => trovaIn(s, 'Dario').avatar, 'foto messa dalla regia');
-verifica('anche il presentatore puo\' mettere la foto a qualcuno', trovaIn(fotoDaRegia, 'Dario').avatar === caricata.url);
+// Nemmeno la regia puo' appendere un'immagine presa da fuori.
+await azioneGiro({ tipo: 'avatar', idGiocatore: 'dario', url: 'https://sito-esterno.example/foto.png' });
+await azioneGiro({ tipo: 'avatar', idGiocatore: 'elena', url: caricata.url });
+const dopoEsterna = await attendiStato(schermoGiro, (s) => trovaIn(s, 'Elena').avatar, 'foto di Elena');
+verifica('un indirizzo esterno non attacca', trovaIn(dopoEsterna, 'Dario').avatar === null,
+  String(trovaIn(dopoEsterna, 'Dario').avatar));
+
+await azioneGiro({ tipo: 'avatar', idGiocatore: 'carla', url: '' });
+const senzaFoto = await attendiStato(schermoGiro, (s) => trovaIn(s, 'Carla').avatar === null, 'foto tolta');
+verifica('il conduttore puo\' togliere la foto', senzaFoto !== null);
 
 await fetch(INDIRIZZO + '/api/media/' + caricata.file, { method: 'DELETE' });
 

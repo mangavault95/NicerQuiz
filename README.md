@@ -10,7 +10,7 @@ Quattro schermi sulla stessa serata:
 | **Editor** `/editor` | tu, prima | costruisci round e domande, carichi foto e audio, provi gli effetti |
 | **Regia** `/regia` | il presentatore | domande in anticipo, risposte, note, chi ha prenotato e con che distacco, tutti i comandi, e una **mini-anteprima dal vivo** di quello che vedono i concorrenti |
 | **Tabellone** `/tabellone` | tutti | solo lo spettacolo. Mai la risposta prima del tempo |
-| **Telefono** `/gioca` | i giocatori | un pulsante grande per prenotarsi (o il cartello di chi ha la mano, nei round a turno), la propria foto e il proprio punteggio |
+| **Telefono** `/gioca` | i giocatori | un pulsante grande per prenotarsi (o il cartello di chi ha la mano, nei round a turno), e il proprio punteggio |
 
 Le risposte non escono mai dal server verso il tabellone o i telefoni finche'
 il presentatore non le rivela: non basta aprire gli strumenti per sviluppatori
@@ -51,8 +51,8 @@ npm run prova
 ```
 
 Simula presentatore, tabellone e giocatori e verifica punteggi, coda dei buzz,
-turni e rimbalzi, malus, jolly, tabellone a caselle, foto dei partecipanti e
-riconnessioni.
+turni e rimbalzi, malus, jolly, tabellone a caselle, foto dei partecipanti (e
+che dal telefono non si possano cambiare) e riconnessioni.
 
 Per guardare il tabellone con qualcuno dentro senza aprire quattro finestre:
 
@@ -60,8 +60,8 @@ Per guardare il tabellone con qualcuno dentro senza aprire quattro finestre:
 node server/finti-giocatori.mjs CODICE
 ```
 
-Collega quattro partecipanti finti, tre con la foto, e li tiene lì finché non
-lo chiudi.
+Collega quattro partecipanti finti e li tiene li' finche' non lo chiudi. Le
+facce gliele metti tu dalla regia.
 
 ## Costruire un quiz
 
@@ -128,10 +128,14 @@ I punti si aggiornano da soli man mano che il gioco va avanti, e a ogni cambio
 lampeggia lo scarto (`+300`, `-10`) sopra il totale, cosi' si vede *quanto* ha
 preso senza dover leggere il numero grande.
 
-Le foto si caricano in due modi: **dal telefono**, toccando la propria icona in
-alto a sinistra, oppure **dalla regia**, cliccando il pallino accanto al nome
-(comodo per chi non ha voglia di cercarsi una foto a serata iniziata). Chi non
-ne mette una resta con le sue iniziali sul suo colore.
+**Le facce le decide il conduttore**, non i giocatori: dalla regia, cliccando il
+pallino accanto al nome, si apre un pannello per caricare una foto dal computer
+o per sceglierne una fra quelle gia' caricate. Cosi' le facce si preparano con
+calma prima della serata — anche dalla libreria dell'editor, e' la stessa — e
+nessuno se le cambia a meta' partita. Chi non ne ha una resta con le sue
+iniziali sul suo colore.
+
+Dal telefono la propria foto si vede e basta.
 
 Le icone stanno sempre nello stesso ordine, quello del giro: se si
 riordinassero per punteggio salterebbero da una parte all'altra a ogni risposta
@@ -228,8 +232,9 @@ Il tabellone e' un componente solo (`VistaTabellone`), usato sia dalla pagina
 puo' fidarsi del riquadro.
 
 Le foto dei partecipanti passano per lo stesso caricamento dei media del quiz, e
-il server accetta solo indirizzi che servono lui (`/media/...`): dal telefono di
-un giocatore non si puo' far comparire sul tabellone un'immagine presa altrove.
+il server accetta solo indirizzi che servono lui (`/media/...`): nemmeno per
+sbaglio si appende al tabellone un'immagine presa da un altro sito. Assegnarle e'
+un'azione di regia, non esiste un modo per farlo dal telefono.
 
 ## Metterlo online
 
